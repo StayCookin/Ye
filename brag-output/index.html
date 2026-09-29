@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>InRent — launch</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px; overflow: hidden; background: #F8F9FA;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased; color: #1A1A2E;
+      }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+      #backdrop {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(900px 620px at 50% 4%, rgba(0,191,165,0.22), rgba(0,191,165,0) 62%),
+          linear-gradient(180deg, #E0F7F4 0%, #F1FAF8 38%, #F8F9FA 100%);
+      }
+      #glow {
+        position: absolute; top: -180px; left: 50%; margin-left: -520px;
+        width: 1040px; height: 720px;
+        background: radial-gradient(closest-side, rgba(0,191,165,0.30), rgba(0,191,165,0) 70%);
+        filter: blur(6px);
+      }
+      .clip { position: absolute; inset: 0; }
+
+      /* Hook */
+      #s1-inner { position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 30px; opacity: 0; padding: 0 96px; }
+      #s1-inner img { width: 320px; height: auto; }
+      #s1-line { text-align: center; font-size: 74px; font-weight: 800; line-height: 1.18;
+        letter-spacing: -0.02em; color: #14343A; }
+      #s1-line b { color: #00897B; font-weight: 800; }
+
+      /* Phone */
+      #caption { position: absolute; top: 232px; left: 0; right: 0; text-align: center; height: 40px; }
+      #caption span { position: absolute; left: 0; right: 0; opacity: 0;
+        font-size: 30px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #00786C; }
+      #phone { position: absolute; left: 200px; top: 360px; width: 680px; height: 1380px;
+        background: #0E1621; border-radius: 64px; padding: 18px;
+        box-shadow: 0 44px 96px rgba(15,45,50,0.30); opacity: 0; }
+      #screen { position: relative; width: 100%; height: 100%; background: #F8F9FA;
+        border-radius: 48px; overflow: hidden; }
+      #notch { position: absolute; top: 14px; left: 50%; margin-left: -66px; width: 132px; height: 26px;
+        background: #0E1621; border-radius: 13px; z-index: 50; }
+      .statusbar { position: relative; height: 60px; display: flex; align-items: center;
+        justify-content: space-between; padding: 0 34px; font-size: 22px; font-weight: 600; color: #1A1A2E; }
+      .statusbar .dots { display: flex; gap: 7px; }
+      .statusbar .dots i { width: 9px; height: 9px; border-radius: 50%; background: #1A1A2E; opacity: 0.85; }
+      .app-screen { position: absolute; inset: 0; background: #F8F9FA; }
+
+      .ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+      .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; background: #fff;
+        border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; padding-top: 12px; z-index: 5; }
+      .tabbar .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+        font-size: 15px; font-weight: 600; color: #6B7280; }
+      .tabbar .tab.on { color: #00786C; }
+
+      /* Browse */
+      #scr-browse .head { padding: 10px 22px 6px; }
+      .searchrow { display: flex; gap: 12px; align-items: center; }
+      .search { flex: 1; height: 58px; background: #fff; border: 1px solid #E5E7EB; border-radius: 15px;
+        display: flex; align-items: center; gap: 12px; padding: 0 18px; color: #6B7280; font-size: 21px; }
+      .filterbtn { width: 58px; height: 58px; border-radius: 15px; background: #00BFA5; display: grid; place-items: center; }
+      .sectrow { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 22px 2px; }
+      .sectrow .t { font-size: 21px; font-weight: 700; color: #1A1A2E; }
+      .sectrow .s { font-size: 17px; font-weight: 600; color: #00786C; }
+      .cards { padding: 8px 22px 100px; display: flex; flex-direction: column; gap: 18px; }
+      .card { background: #fff; border: 1px solid #E5E7EB; border-radius: 18px; overflow: hidden; }
+      .photo { height: 220px; position: relative; overflow: hidden; background: #E5E7EB; }
+      .photo .heart { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px;
+        border-radius: 50%; background: rgba(255,255,255,0.92); display: grid; place-items: center; z-index: 2; }
+      .verif { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,0.97); color: #00786C; font-size: 17px; font-weight: 700;
+        padding: 7px 12px; border-radius: 999px; z-index: 2; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+      .cbody { padding: 15px 17px 17px; }
+      .cbody .trow { display: flex; justify-content: space-between; align-items: baseline; }
+      .cbody .title { font-size: 24px; font-weight: 700; color: #1A1A2E; }
+      .cbody .price { font-size: 24px; font-weight: 800; color: #00786C; }
+      .cbody .loc { margin-top: 5px; font-size: 18px; color: #6B7280; display: flex; align-items: center; gap: 6px; }
+      .cbody .chips { margin-top: 13px; display: flex; gap: 9px; }
+      .chip { font-size: 16px; color: #374151; background: #F3F4F6; border-radius: 9px; padding: 6px 12px; }
+
+      /* Detail */
+      #scr-detail { opacity: 1; }
+      #scr-detail .hero { height: 440px; position: relative; overflow: hidden; background: #E5E7EB; }
+      #scr-detail .hero .grad { position: absolute; inset: 0; z-index: 1;
+        background: linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 26%); }
+      #scr-detail .hero .back { position: absolute; top: 20px; left: 20px; width: 48px; height: 48px;
+        border-radius: 50%; background: rgba(255,255,255,0.92); display: grid; place-items: center; z-index: 3; }
+      #scr-detail .hero .dots { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+        display: flex; gap: 8px; z-index: 3; }
+      #scr-detail .hero .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.75); }
+      #scr-detail .hero .dots i.on { background: #fff; width: 22px; border-radius: 5px; }
+      #scr-detail .body { padding: 22px 24px; }
+      #scr-detail .title { font-size: 30px; font-weight: 800; color: #1A1A2E; }
+      #scr-detail .loc { margin-top: 7px; font-size: 19px; color: #6B7280; display: flex; align-items: center; gap: 7px; }
+      #scr-detail .pricerow { margin-top: 16px; display: flex; align-items: baseline; gap: 10px; }
+      #scr-detail .pricerow .p { font-size: 42px; font-weight: 800; color: #1A1A2E; }
+      #scr-detail .pricerow .pm { font-size: 20px; color: #6B7280; }
+      .vwrap { display: inline-block; position: relative; margin-top: 16px; transform-origin: left center; }
+      #vring { position: absolute; inset: -7px; border-radius: 999px; border: 3px solid #00BFA5; opacity: 0; }
+      .vland { display: inline-flex; align-items: center; gap: 8px;
+        background: #E0F7F4; color: #00786C; font-size: 18px; font-weight: 700; padding: 9px 15px; border-radius: 999px; }
+      #scr-detail .amen { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+      #scr-detail .amen .a { font-size: 18px; color: #374151; background: #F3F4F6; border-radius: 11px; padding: 10px 16px; }
+      #scr-detail .desc { margin-top: 20px; font-size: 19px; line-height: 1.55; color: #4B5563; }
+      #scr-detail .host { margin-top: 20px; display: flex; align-items: center; gap: 13px;
+        padding-top: 18px; border-top: 1px solid #E5E7EB; }
+      #scr-detail .host .av { width: 50px; height: 50px; border-radius: 50%;
+        background: linear-gradient(135deg,#00998A,#00786B); display: grid; place-items: center;
+        color: #fff; font-weight: 700; font-size: 20px; }
+      #scr-detail .host .hn { font-size: 20px; font-weight: 700; color: #1A1A2E; }
+      #scr-detail .host .hr { font-size: 16px; color: #6B7280; margin-top: 2px; }
+      #scr-detail .mapbox { margin-top: 20px; height: 168px; border-radius: 14px; position: relative;
+        overflow: hidden; border: 1px solid #E5E7EB;
+        background:
+          repeating-linear-gradient(35deg, rgba(0,137,123,0.10) 0 2px, rgba(0,137,123,0) 2px 46px),
+          repeating-linear-gradient(-52deg, rgba(0,137,123,0.10) 0 2px, rgba(0,137,123,0) 2px 60px),
+          linear-gradient(160deg,#E8F5F2,#DCEFEC); }
+      #scr-detail .mapbox .pin { position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%) rotate(45deg);
+        width: 40px; height: 40px; border-radius: 50% 50% 50% 2px; background: #00897B;
+        box-shadow: 0 6px 14px rgba(0,137,123,0.4); }
+      #scr-detail .mapbox .pin::after { content: ""; position: absolute; left: 50%; top: 50%;
+        transform: translate(-50%,-50%) rotate(-45deg); width: 13px; height: 13px; border-radius: 50%; background: #fff; }
+      #scr-detail .mapbox .tag { position: absolute; left: 12px; bottom: 12px; background: rgba(255,255,255,0.96);
+        color: #14343A; font-size: 16px; font-weight: 600; padding: 7px 13px; border-radius: 999px; }
+      #scr-detail .cta { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 24px 26px;
+        background: linear-gradient(180deg, rgba(248,249,250,0) 0%, #F8F9FA 22%); display: flex; gap: 14px; z-index: 4; }
+      #scr-detail .cta .viewing { flex: 1; height: 66px; border-radius: 15px; border: 1.5px solid #00BFA5; color: #00786C;
+        font-size: 21px; font-weight: 700; display: grid; place-items: center; background: #fff; }
+      #btn-book { flex: 1.2; height: 66px; border-radius: 15px; background: #00897B; color: #fff;
+        font-size: 21px; font-weight: 700; display: grid; place-items: center; }
+
+      .tap { position: absolute; z-index: 30; width: 130px; height: 130px; margin: -65px 0 0 -65px;
+        border-radius: 50%; background: rgba(0,137,123,0.30); opacity: 0; pointer-events: none; }
+
+      /* Bottom-sheet confirmation */
+      #scrim { position: absolute; inset: 0; background: #0B2A26; opacity: 0; z-index: 20; }
+      #sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 930px; background: #fff;
+        border-radius: 34px 34px 0 0; box-shadow: 0 -22px 64px rgba(0,0,0,0.25); z-index: 21;
+        padding: 26px 40px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      #sheet .grab { width: 52px; height: 6px; border-radius: 3px; background: #D1D5DB; margin-bottom: 30px; }
+      #check { width: 138px; height: 138px; border-radius: 50%; background: #E0F7F4; display: grid; place-items: center; }
+      #sheet-title { margin-top: 26px; font-size: 34px; font-weight: 800; color: #1A1A2E; opacity: 0; }
+      #sheet-sub { margin-top: 12px; font-size: 20px; color: #6B7280; line-height: 1.5; opacity: 0; }
+      #sheet-card { margin-top: 28px; width: 100%; border: 1px solid #E5E7EB; background: #F8F9FA;
+        border-radius: 16px; padding: 20px 22px; text-align: left; opacity: 0; }
+      #sheet-card .r { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; }
+      #sheet-card .r .k { font-size: 18px; color: #6B7280; }
+      #sheet-card .r .v { font-size: 19px; font-weight: 600; color: #1A1A2E; }
+      #sheet-card .pill { font-size: 16px; font-weight: 700; color: #92400E; background: #FFF7E0; padding: 6px 13px; border-radius: 999px; }
+      #sheet-btn { margin-top: 30px; width: 100%; height: 68px; border-radius: 15px; background: #00897B;
+        color: #fff; font-size: 21px; font-weight: 700; display: grid; place-items: center; opacity: 0; }
+
+      /* Outro */
+      #s5-inner { position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 8px; opacity: 0; padding: 0 90px; }
+      #s5-inner img { width: 460px; height: auto; margin-bottom: 18px; }
+      #s5-line { font-size: 48px; font-weight: 800; color: #14343A; text-align: center; letter-spacing: -0.01em; }
+      #s5-url { margin-top: 30px; display: inline-flex; align-items: center; gap: 12px;
+        background: #00897B; color: #fff; font-size: 34px; font-weight: 800; letter-spacing: 0.01em;
+        padding: 20px 44px; border-radius: 999px; box-shadow: 0 14px 34px rgba(0,137,123,0.4); }
+      #s5-cap { margin-top: 26px; font-size: 27px; color: #6B7280; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="22"
+         data-width="1080" data-height="1920">
+
+      <div id="backdrop"><div id="glow"></div></div>
+
+      <!-- Hook -->
+      <section id="scene-1-hook" class="clip" data-start="0" data-duration="3.3" data-track-index="0">
+        <div id="s1-inner">
+          <img id="logo-hook" src="assets/img/logo.png" alt="InRent" />
+          <div id="s1-line">Student housing in Botswana,<br /><b>without the guesswork.</b></div>
+        </div>
+      </section>
+
+      <!-- Phone stage -->
+      <section id="scene-phone" class="clip" data-start="3.3" data-duration="15.7" data-track-index="1">
+        <div id="caption" data-layout-allow-overlap="true">
+          <span id="cap-browse">Browse verified rentals</span>
+          <span id="cap-book">Tour it, book it</span>
+          <span id="cap-sent">Request sent</span>
+        </div>
+        <div id="phone">
+          <div id="screen">
+            <div id="notch"></div>
+
+            <!-- Browse -->
+            <div id="scr-browse" class="app-screen" data-layout-allow-overlap="true">
+              <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+              <div class="head">
+                <div class="searchrow">
+                  <div class="search">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#9CA3AF" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/></svg>
+                    Search near your campus
+                  </div>
+                  <div class="filterbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M6 12h12M10 18h4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+                </div>
+              </div>
+              <div class="sectrow"><span class="t">12 places near you</span><span class="s">Sort ▾</span></div>
+              <div class="cards">
+                <div class="card" id="cardA">
+                  <div class="photo">
+                    <img class="ph" src="assets/img/room1.jpg" alt="" />
+                    <div class="heart"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.6-7-9.3A3.7 3.7 0 0 1 12 7a3.7 3.7 0 0 1 7 3.7C19 15.4 12 20 12 20z" stroke="#fff" stroke-width="2"/></svg></div>
+                    <div class="verif"><svg width="17" height="17" viewBox="0 0 24 24" fill="#00BFA5"><path d="M12 2l2.4 1.7 2.9-.2 1 2.7 2.4 1.6-.9 2.8.9 2.8-2.4 1.6-1 2.7-2.9-.2L12 22l-2.4-1.7-2.9.2-1-2.7L3.3 16l.9-2.8-.9-2.8 2.4-1.6 1-2.7 2.9.2z"/><path d="M8.5 12.2l2.3 2.3 4.4-4.6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Verified</div>
+                  </div>
+                  <div class="cbody">
+                    <div class="trow"><span class="title">Sunny Studio · Block 6</span><span class="price">P2,500/mo</span></div>
+                    <div class="loc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z" stroke="#9CA3AF" stroke-width="2"/><circle cx="12" cy="10" r="2.4" stroke="#9CA3AF" stroke-width="2"/></svg>Gaborone · 5 min to campus</div>
+                    <div class="chips"><span class="chip">1 bed</span><span class="chip">Furnished</span><span class="chip">Wi-Fi</span></div>
+                  </div>
+                </div>
+                <div class="card" id="cardB">
+                  <div class="photo">
+                    <img class="ph" src="assets/img/room2.jpg" alt="" />
+                    <div class="heart"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.6-7-9.3A3.7 3.7 0 0 1 12 7a3.7 3.7 0 0 1 7 3.7C19 15.4 12 20 12 20z" stroke="#fff" stroke-width="2"/></svg></div>
+                    <div class="verif"><svg width="17" height="17" viewBox="0 0 24 24" fill="#00BFA5"><path d="M12 2l2.4 1.7 2.9-.2 1 2.7 2.4 1.6-.9 2.8.9 2.8-2.4 1.6-1 2.7-2.9-.2L12 22l-2.4-1.7-2.9.2-1-2.7L3.3 16l.9-2.8-.9-2.8 2.4-1.6 1-2.7 2.9.2z"/><path d="M8.5 12.2l2.3 2.3 4.4-4.6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Verified</div>
+                  </div>
+                  <div class="cbody">
+                    <div class="trow"><span class="title">Cozy Room · Phase 2</span><span class="price">P1,800/mo</span></div>
+                    <div class="loc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z" stroke="#9CA3AF" stroke-width="2"/><circle cx="12" cy="10" r="2.4" stroke="#9CA3AF" stroke-width="2"/></svg>Gaborone · near UB</div>
+                    <div class="chips"><span class="chip">1 bed</span><span class="chip">Water incl.</span></div>
+                  </div>
+                </div>
+                <div class="card" id="cardC" data-layout-allow-occlusion="true">
+                  <div class="photo">
+                    <img class="ph" src="assets/img/room3.jpg" alt="" />
+                    <div class="verif"><svg width="17" height="17" viewBox="0 0 24 24" fill="#00BFA5"><path d="M12 2l2.4 1.7 2.9-.2 1 2.7 2.4 1.6-.9 2.8.9 2.8-2.4 1.6-1 2.7-2.9-.2L12 22l-2.4-1.7-2.9.2-1-2.7L3.3 16l.9-2.8-.9-2.8 2.4-1.6 1-2.7 2.9.2z"/><path d="M8.5 12.2l2.3 2.3 4.4-4.6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Verified</div>
+                  </div>
+                  <div class="cbody">
+                    <div class="trow"><span class="title">Modern Ensuite · Riverwalk</span><span class="price">P3,200/mo</span></div>
+                    <div class="loc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z" stroke="#9CA3AF" stroke-width="2"/><circle cx="12" cy="10" r="2.4" stroke="#9CA3AF" stroke-width="2"/></svg>Gaborone · CBD</div>
+                    <div class="chips"><span class="chip">Ensuite</span><span class="chip">Furnished</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab on"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#00897B" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="#00897B" stroke-width="2" stroke-linecap="round"/></svg>Explore</div>
+                <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.6-7-9.3A3.7 3.7 0 0 1 12 7a3.7 3.7 0 0 1 7 3.7C19 15.4 12 20 12 20z" stroke="#9CA3AF" stroke-width="2"/></svg>Saved</div>
+                <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="16" rx="2" stroke="#9CA3AF" stroke-width="2"/><path d="M8 3v4M16 3v4M4 10h16" stroke="#9CA3AF" stroke-width="2"/></svg>Bookings</div>
+                <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#9CA3AF" stroke-width="2"/><path d="M4 20c1.8-3.5 5-5 8-5s6.2 1.5 8 5" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/></svg>Profile</div>
+              </div>
+              <div class="tap" id="tap-card"></div>
+            </div>
+
+            <!-- Detail (pushes in) -->
+            <div id="scr-detail" class="app-screen" data-layout-allow-overlap="true" data-layout-allow-overflow="true">
+              <div class="hero">
+                <img class="ph" src="assets/img/room1.jpg" alt="" />
+                <div class="grad"></div>
+                <div class="back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#1A1A2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+              </div>
+              <div class="body">
+                <div class="title">Sunny Studio · Block 6</div>
+                <div class="loc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z" stroke="#9CA3AF" stroke-width="2"/><circle cx="12" cy="10" r="2.4" stroke="#9CA3AF" stroke-width="2"/></svg>Gaborone · 5 min to campus</div>
+                <div class="pricerow"><span class="p">P2,500</span><span class="pm">per month</span></div>
+                <div class="vwrap" id="vwrap"><div id="vring"></div><div class="vland"><svg width="18" height="18" viewBox="0 0 24 24" fill="#00BFA5"><path d="M12 2l2.4 1.7 2.9-.2 1 2.7 2.4 1.6-.9 2.8.9 2.8-2.4 1.6-1 2.7-2.9-.2L12 22l-2.4-1.7-2.9.2-1-2.7L3.3 16l.9-2.8-.9-2.8 2.4-1.6 1-2.7 2.9.2z"/><path d="M8.5 12.2l2.3 2.3 4.4-4.6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Verified landlord</div></div>
+                <div class="amen"><span class="a">Wi-Fi</span><span class="a">Furnished</span><span class="a">Water incl.</span><span class="a">Study desk</span></div>
+                <div class="desc">Bright, furnished studio a short walk from campus. Water and Wi-Fi included, with a quiet desk for study nights.</div>
+                <div class="host">
+                  <div class="av">N</div>
+                  <div><div class="hn">Hosted by Naledi</div><div class="hr">Verified landlord · responds in ~2h</div></div>
+                </div>
+                <div class="mapbox"><div class="pin"></div><div class="tag">5 min walk to campus · Gaborone</div></div>
+              </div>
+              <div class="cta">
+                <div class="viewing">Book a viewing</div>
+                <div id="btn-book">Request to book</div>
+              </div>
+              <div class="tap" id="tap-book"></div>
+            </div>
+
+            <!-- Confirmation bottom sheet -->
+            <div id="scrim"></div>
+            <div id="sheet" data-layout-allow-overflow="true">
+              <div class="grab"></div>
+              <div id="check"><svg width="68" height="68" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#00BFA5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div id="sheet-title">Booking request sent!</div>
+              <div id="sheet-sub">The landlord will respond within 24 hours.</div>
+              <div id="sheet-card">
+                <div class="r"><span class="k">Listing</span><span class="v">Sunny Studio · Block 6</span></div>
+                <div class="r"><span class="k">Move-in</span><span class="v">1 Feb 2026</span></div>
+                <div class="r"><span class="k">Lease</span><span class="v">12 months</span></div>
+                <div class="r"><span class="k">Status</span><span class="pill">Awaiting landlord</span></div>
+              </div>
+              <div id="sheet-btn">View my bookings</div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Outro -->
+      <section id="scene-5-outro" class="clip" data-start="18.4" data-duration="3.6" data-track-index="2">
+        <div id="s5-inner">
+          <img id="logo-outro" src="assets/img/logo.png" alt="InRent" />
+          <div id="s5-line">Find your perfect student home.</div>
+          <div id="s5-url">inrent.site</div>
+          <div id="s5-cap">For students &amp; landlords · Gaborone, Botswana</div>
+        </div>
+      </section>
+
+      <!-- Audio -->
+      <audio id="music" data-start="0" data-duration="22" data-track-index="10" data-volume="1"
+             src="assets/music/happy-beats-business-moves-vol-11-by-ende-dot-app.mp3"></audio>
+      <audio id="sfx-cardA" data-start="5.78" data-duration="0.11" data-track-index="11" data-volume="0.5"
+             src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-cardB" data-start="6.88" data-duration="0.19" data-track-index="12" data-volume="0.5"
+             src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-tapcard" data-start="8.35" data-duration="0.09" data-track-index="13" data-volume="0.55"
+             src="assets/sfx/ui/click1.ogg"></audio>
+      <audio id="sfx-verified" data-start="9.5" data-duration="0.21" data-track-index="14" data-volume="0.6"
+             src="assets/sfx/impact/impactGlass_light_001.ogg"></audio>
+      <audio id="sfx-tapbook" data-start="11.65" data-duration="0.10" data-track-index="15" data-volume="0.6"
+             src="assets/sfx/interface/click_001.ogg"></audio>
+      <audio id="sfx-ok" data-start="12.5" data-duration="0.12" data-track-index="16" data-volume="0.7"
+             src="assets/sfx/impact/impactSoft_medium_000.ogg"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      tl.fromTo("#glow", { opacity: 0.6 }, { opacity: 0.85, duration: 11, ease: "sine.inOut" }, 0);
+
+      tl.fromTo("#music", { volume: 0 }, { volume: 0.30, duration: 0.5, ease: "power1.out" }, 0)
+        .to("#music", { volume: 0, duration: 1.5, ease: "power1.in" }, 20.5);
+
+      // Hook (0–3.3)
+      tl.fromTo("#s1-inner", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 0.3)
+        .to("#s1-inner", { opacity: 0, y: -16, duration: 0.35, ease: "power2.in" }, 2.95);
+
+      // Phone rises (beat-locked ~3.70s)
+      tl.fromTo("#phone", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 3.4);
+      tl.to("#scr-browse", { opacity: 1, duration: 0.4, ease: "power1.out" }, 3.5);
+      tl.fromTo("#cap-browse", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 }, 3.75);
+
+      // Initial states
+      gsap.set("#scr-browse", { opacity: 0 });
+      gsap.set(["#cardA", "#cardB", "#cardC"], { opacity: 0, y: 26 });
+      gsap.set("#scr-detail", { x: 644, opacity: 0 });
+      gsap.set("#vwrap", { scale: 0.4, opacity: 0 });
+      gsap.set("#scrim", { opacity: 0 });
+      gsap.set("#sheet", { y: 940 });
+      gsap.set("#tap-card", { left: 322, top: 372 });
+      gsap.set("#tap-book", { left: 461, top: 1286 });
+
+      // Browse: three verified cards arrive (beat grid), held
+      tl.to("#cardA", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 5.8)
+        .to("#cardB", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 6.9)
+        .to("#cardC", { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 7.45);
+
+      // Tap card A → native push to detail
+      tl.fromTo("#tap-card", { scale: 0.2, opacity: 0.5 }, { scale: 1.7, opacity: 0, duration: 0.5, ease: "power2.out" }, 8.35)
+        .to("#cardA", { scale: 0.98, duration: 0.12 }, 8.35).to("#cardA", { scale: 1, duration: 0.18 }, 8.47);
+      tl.to("#cap-browse", { opacity: 0, duration: 0.3 }, 8.5)
+        .fromTo("#cap-book", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35 }, 8.6)
+        .to("#scr-browse", { x: -200, opacity: 0.55, duration: 0.5, ease: "power2.inOut" }, 8.55)
+        .set("#scr-detail", { opacity: 1 }, 8.55)
+        .to("#scr-detail", { x: 0, duration: 0.55, ease: "power3.out" }, 8.55)
+        .set("#scr-browse", { opacity: 0 }, 9.2);
+
+      // Verified hero beat (~9.5s) — badge stamps in with a ring pulse
+      tl.to("#vwrap", { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2.2)" }, 9.5)
+        .fromTo("#vring", { scale: 1, opacity: 0.7 }, { scale: 1.9, opacity: 0, duration: 0.6, ease: "power2.out" }, 9.5);
+
+      // Tap Request to book → confirmation sheet slides up
+      tl.fromTo("#tap-book", { scale: 0.2, opacity: 0.5 }, { scale: 1.7, opacity: 0, duration: 0.5, ease: "power2.out" }, 11.65)
+        .to("#btn-book", { scale: 0.96, duration: 0.12 }, 11.65).to("#btn-book", { scale: 1, duration: 0.18 }, 11.77);
+      tl.to("#cap-book", { opacity: 0, duration: 0.3 }, 11.85)
+        .fromTo("#cap-sent", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35 }, 11.95)
+        .to("#scrim", { opacity: 0.42, duration: 0.4 }, 11.9)
+        .to("#sheet", { y: 0, duration: 0.55, ease: "power3.out" }, 11.95)
+        // hide detail text once the sheet covers it (keeps the hero photo behind the scrim)
+        .to(["#scr-detail .body", "#scr-detail .cta"], { opacity: 0, duration: 0.3 }, 12.3);
+
+      // Sheet content (check ~12.55s)
+      tl.fromTo("#check", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.8)" }, 12.55)
+        .fromTo("#sheet-title", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4 }, 12.85)
+        .fromTo("#sheet-sub", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 }, 13.05)
+        .fromTo("#sheet-card", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 13.3)
+        .fromTo("#sheet-btn", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4 }, 13.6);
+
+      // Phone out
+      tl.to(["#phone", "#caption"], { opacity: 0, y: -22, duration: 0.35, ease: "power2.in" }, 17.95);
+
+      // Outro (18.4–22)
+      tl.set("#s5-inner", { opacity: 1 }, 18.4)
+        .fromTo("#s5-inner img", { opacity: 0, scale: 0.9, y: 10 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "back.out(1.5)" }, 18.5)
+        .fromTo("#s5-line", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 18.95)
+        .fromTo("#s5-url", { opacity: 0, y: 14, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, 19.4)
+        .fromTo("#s5-cap", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 19.85);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
